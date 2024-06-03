@@ -1,13 +1,20 @@
 package com.example.domain;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+
+import static jakarta.persistence.CascadeType.MERGE;
+import static jakarta.persistence.CascadeType.PERSIST;
 
 @Entity
 public class Account {
@@ -19,12 +26,8 @@ public class Account {
     private String firstName;
     private String lastName;
 
-    @ElementCollection
-    @CollectionTable(
-            name = "phone_number",
-            joinColumns = @JoinColumn(name = "account_id")
-    )
-    private List<PhoneNumber> phoneNumbers;
+    @OneToMany(mappedBy = "account", orphanRemoval = true, cascade = {PERSIST, MERGE})
+    private Set<PhoneNumber> phoneNumbers;
 
     public Account() {
     }
@@ -34,14 +37,14 @@ public class Account {
         this.iban = iban;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.phoneNumbers = new ArrayList<>();
+        this.phoneNumbers = new HashSet<>();
     }
 
     public void addPhoneNumber(PhoneNumber phoneNumber) {
-        if (!phoneNumbers.contains(phoneNumber)) {
-            this.phoneNumbers.add(phoneNumber);
-        }
+        this.phoneNumbers.add(phoneNumber);
+        phoneNumber.setAccount(this);
     }
+
 
     public String getId() {
         return id;
@@ -52,7 +55,7 @@ public class Account {
     }
 
     public List<PhoneNumber> getPhoneNumbers() {
-        return phoneNumbers;
+        return phoneNumbers.stream().toList();
     }
 
     public String getFirstName() {
